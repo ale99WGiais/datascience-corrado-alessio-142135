@@ -1,0 +1,4 @@
+pandas
+GoogleNews
+tqdm
+newspaper3k
