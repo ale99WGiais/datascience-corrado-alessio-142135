@@ -1,7 +1,10 @@
 ---
-title: "A data-driven presentation of our start-up: INNOvALGAE"
+title: "A data-driven analysis for our start-up: INNOvALGAE"
 author: "Corrado Alessio"
 output: ioslides_presentation
+fig_width: 8
+fig_height: 5 
+fig_align: "center"
 ---
 
 ```{r setup, include=FALSE}
@@ -13,29 +16,47 @@ library(dplyr)
 library(tidytext)
 library(igraph)
 library(ggwordcloud)
+library(ggraph)
 
-get_sentiments("bing")
-get_sentiments("afinn")
-get_sentiments("nrc")
+custom_stop = data.frame (
+  word  = c("1", "2", "3", "4", "5", "10" "it's", "."),
+  lexicon = "custom"
+)
+
+stop_words = rbind(stop_words, custom_stop)
+
 
 #ogni file rappresenta un tema
-list_of_files <- list.files(path = "out",
+list_of_files = list.files(path = "out",
                             recursive = TRUE,
                             pattern = "\\.csv$",
                             full.names = TRUE)
 
 #tutti gli articoli caricati
-df <- list_of_files %>%
+df = list_of_files %>%
     set_names() %>% 
     map_df(read_csv, .id = "file_name")
 
-#solo parole del testo
+#parole del testo
 df_words = unnest_tokens(tbl = df, output = word, input = text)%>%
   anti_join(stop_words)
 
-#solo parole del titolo
+#parole del titolo
 df_words_title = unnest_tokens(tbl = df, output = word, input = text)%>%
   anti_join(stop_words)
+
+#bigrammi del testo
+df_bigram = df %>%
+  unnest_tokens(bigram, text, token = "ngrams", n = 2) %>% 
+  filter(!is.na(bigram)) %>%
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word) %>% 
+  unite(bigram, word1, word2, sep = " ")
+
+df_words_title_summary = df_words_title %>% group_by(word) %>% count(sort=TRUE) %>% ungroup()
+
+df_words_summary = df_words %>% group_by(word, theme) %>% count(sort=TRUE) %>% ungroup()
 
 ```
 
@@ -94,11 +115,18 @@ Then we have fed the keywords to a custom web crawler which:
 The crawler was written in Python, while the analysis was performed using R. 
 
 
-## Searched Keywords
+## Dataset
 
-```{r message=FALSE, warning=FALSE}
+To start our analysis, we first calculate some metrics about the entire dataset. 
 
-#Analysed themes and keywords
+Main goals: 
+
+- verification that it is complete 
+- overview of the contained data
+- overview of the links between data
+
+```{r include=FALSE}
+
 
 df_themes = df %>% group_by(theme) %>% count() %>% ungroup() %>%
   mutate(name=paste("theme:", theme), type="theme", color="yellow", label=paste(theme, " (", n ,")", sep = ""))
@@ -109,72 +137,141 @@ df_keywords = df %>% group_by(keywords) %>% count() %>% ungroup() %>%
 df_connections = df %>% group_by(theme, keywords) %>% count() %>% ungroup()
 
 
-vertices <- rbind(
-  df_themes %>% select(name, type, color, label), 
-  df_keywords %>% select(name, type, color, label)
-)
-
-relations <- df_connections %>% mutate(from=paste("theme:", theme), to=paste("keyword:", keywords), label=n) %>% select(from, to, label)
-
-g = graph_from_data_frame(relations, directed = TRUE, vertices = vertices)
-plot(g)
-
 ```
 
-## Number of articles
 
-```{r}
 
-data <- data.frame(
-  group=LETTERS[1:5],
-  value=c(13,7,9,21,2)
-)
+### Themes
+
+```{r fig.height = 5, fig.width = 8, fig.align = "center"}
 
 data = df_themes %>% select(group=theme, value=n, label)
 
 # Compute the position of labels
-data <- data %>% 
+data = data %>% 
   arrange(desc(group)) %>%
   mutate(prop = value / sum(data$value) *100) %>%
   mutate(ypos = cumsum(prop)- 0.5*prop )
 
 # Basic piechart
 ggplot(data, aes(x="", y=prop, fill=group)) +
-  geom_bar(stat="identity", width=1, color="white") +
+  geom_bar(stat="identity", width=1, color="white", alpha=0.8) +
   coord_polar("y", start=0) +
   theme_void() + 
-  theme(legend.position="none") +
-  
-  geom_text(aes(y = ypos, label = label), color = "white", size=4) +
+  ggtitle("Number of articles for each theme") +
+  theme(legend.position="none", plot.title = element_text(hjust = 0.5)) +
+  geom_text(aes(x=1.05, y = ypos, label = label), color = "white", size=4) +
   scale_fill_brewer(palette="Set1")
+```
+
+## Keywords
+
+```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+  
+
+ggplot(df_connections, aes(fill=keywords, y=n, x=theme)) + 
+    geom_bar(position="dodge", stat="identity", color = "gray") +
+    geom_text(aes(y=n + 4, label = keywords), color = "black", size=2.2, position = position_dodge(0.9)) +
+    coord_flip() +
+    ggtitle("Number of articles for each keyword, grouped by theme") +
+    xlab("") + ylab("") + 
+    theme(legend.position="none", plot.title = element_text(hjust = 0.5)) 
+```
+
+## Searched Keywords
+
+```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+
+vertices = rbind(
+  df_themes %>% select(name, type, color, label, n), 
+  df_keywords %>% select(name, type, color, label, n)
+)
+
+relations = df_connections %>% mutate(from=paste("theme:", theme), to=paste("keyword:", keywords), label=n) %>% select(from, to, label, n)
+
+g = graph_from_data_frame(relations, directed = TRUE, vertices = vertices)
+
+ggraph(g, layout = 'graphopt') + 
+    geom_node_point(aes(size = log(n, 2), color=color, alpha=0.2)) +
+    geom_edge_link(aes(start_cap = label_rect(node1.name), end_cap = label_rect(node2.name)), 
+                   arrow = arrow(type = "closed", length = unit(1, 'mm'))) + 
+    geom_node_text(aes(label = label), size=3) +
+  theme_graph() +
+  theme(legend.position = "none")
+
 
 ```
 
-## Number of articles for each theme and keyword
+
+
+## Overall sentiment
 
 ```{r}
 
-ggplot(df_connections, aes(x = theme, y = n))+
-  geom_col(aes(fill = keywords))+
-  coord_flip()+
-  theme(legend.position = "none")+
-  scale_fill_viridis_d()
-  
+data = df_words %>% inner_join(get_sentiments("bing")) %>%
+  count(sentiment, sort = TRUE) %>%
+  ungroup()
 
+ggplot(data, aes(x = sentiment, y = n))+
+  geom_col(aes(fill=sentiment)) +
+  xlab("") + ylab("") + ggtitle("Overall sentiment")  + 
+  theme(plot.title = element_text(hjust = 0.5)) 
+  
 ```
+
 
 ## Most common words in the titles
 
-```{r}
+```{r fig.height = 5, fig.width = 8, fig.align = "center"}
 
-df_words_title_summary = df_words_title %>% filter(word != "1" & word != "2" & word != "it’s") %>% group_by(word) %>% count() %>% ungroup() %>% top_n(30, n) %>% arrange(desc(n))
+data = df_words_title_summary %>% top_n(100, n) 
 
-ggplot(df_words_title_summary, aes(label = word, size = n, color = factor(sample.int(10, nrow(df_words_title_summary), replace = TRUE)))) +
+ggplot(data, aes(label = word, size = n, color = factor(sample.int(10, nrow(data), replace = TRUE)))) +
   geom_text_wordcloud_area() +
   scale_size_area(max_size = 24) +
   theme_minimal()
 
 ```
+
+
+
+
+## Sustainability
+
+Nowdays, sustainability is a priority.
+
+Let's have an overview about the general sentiment about sustainability, and identify the major trends. 
+
+
+
+```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+
+data = df_words_summary %>% filter(theme == "sustainability") %>% top_n(100, n)
+
+ggplot(data, aes(label = word, size = n, color = factor(sample.int(10, nrow(data), replace = TRUE)))) +
+  geom_text_wordcloud_area() +
+  scale_size_area(max_size = 24) +
+  theme_minimal()
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -215,34 +312,7 @@ ggplot(data, aes(x = theme, y = n))+
 
 ```{r}
 
-
-df_bigram <- df %>%
-  unnest_tokens(bigram, text, token = "ngrams", n = 2) %>% 
-  filter(!is.na(bigram))
-
-bigrams_separated <- df_bigram %>%
-  separate(bigram, c("word1", "word2"), sep = " ")
-
-bigrams_filtered <- bigrams_separated %>%
-  filter(!word1 %in% stop_words$word) %>%
-  filter(!word2 %in% stop_words$word)
-
-# new bigram counts
-bigram_counts <- bigrams_filtered %>% 
-  count(word1, word2, sort = TRUE) %>% top_n(10000) %>% unite(bigram, word1, word2, sep = " ")
-
-bigrams_united <- bigrams_filtered %>%
-  unite(bigram, word1, word2, sep = " ") %>% semi_join(bigram_counts)
-
-bigram_counts %>% top_n(100)
-
-
-
-```
-
-```{r}
-
-bigram_tf_idf <- bigrams_united %>%
+bigram_tf_idf = df_bigram %>%
   count(theme, bigram) %>%
   bind_tf_idf(bigram, theme, n) %>%
   arrange(desc(tf_idf))
@@ -254,30 +324,7 @@ bigram_tf_idf
 
 ```{r}
 
-library(tidygraph)
-library(ggraph)
-
-bigram_graph <- bigram_counts %>%
-  filter(n > 20) %>% 
-  as_tbl_graph()
-
-bigram_graph
-
-a <- grid::arrow(type = "closed", length = unit(.1, "inches"))
-
-# plot the graph
-ggraph(bigram_graph, layout = "fr") +
-  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
-                 arrow = a, end_cap = circle(.07, 'inches')) +
-  geom_node_point(color = "lightblue", size = 1) +
-  geom_node_text(aes(label = bigram), vjust = 1, hjust = 1) +
-  theme_void()
-
-```
-
-```{r}
-
-data <- df_words %>%
+data = df_words %>%
   inner_join(get_sentiments("loughran"), by = "word") %>%
   count(sentiment, theme) %>%
   spread(sentiment, n, fill = 0)
