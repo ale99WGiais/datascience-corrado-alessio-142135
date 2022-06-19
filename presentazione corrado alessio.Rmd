@@ -10,6 +10,8 @@ fig_align: "center"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 
+#remotes::install_github("ianmoran11/mmtable2")
+
 library(readxl)
 library(tidyverse)
 library(dplyr)
@@ -17,9 +19,10 @@ library(tidytext)
 library(igraph)
 library(ggwordcloud)
 library(ggraph)
+library(DT)
 
 custom_stop = data.frame (
-  word  = c("1", "2", "3", "4", "5", "10" "it's", "."),
+  word  = c("1", "2", "3", "4", "5", "10", "it's", "."),
   lexicon = "custom"
 )
 
@@ -226,7 +229,7 @@ ggplot(data, aes(x = sentiment, y = n))+
 
 data = df_words_title_summary %>% top_n(100, n) 
 
-ggplot(data, aes(label = word, size = n, color = factor(sample.int(10, nrow(data), replace = TRUE)))) +
+ggplot(data, aes(label = word, size = n, color = factor(sample.int(30, nrow(data), replace = TRUE)))) +
   geom_text_wordcloud_area() +
   scale_size_area(max_size = 24) +
   theme_minimal()
@@ -243,12 +246,93 @@ Nowdays, sustainability is a priority.
 Let's have an overview about the general sentiment about sustainability, and identify the major trends. 
 
 
+## 
+
 
 ```{r fig.height = 5, fig.width = 8, fig.align = "center"}
 
 data = df_words_summary %>% filter(theme == "sustainability") %>% top_n(100, n)
 
-ggplot(data, aes(label = word, size = n, color = factor(sample.int(10, nrow(data), replace = TRUE)))) +
+ggplot(data, aes(label = word, size = n, color = factor(sample.int(30, nrow(data), replace = TRUE)))) +
+  geom_text_wordcloud_area() +
+  scale_size_area(max_size = 24) +
+  theme_minimal()
+
+```
+
+
+
+## Most common words about sustainability
+
+
+```{r}
+
+data = df_words %>% filter(theme=="sustainability") %>% inner_join(get_sentiments("loughran")) %>%
+  count(sentiment, sort = TRUE) %>%
+  ungroup()
+
+ggplot(data, aes(x = sentiment, y = n))+
+  geom_col(aes(fill = sentiment)) +
+  theme(legend.pos = "none")
+
+```
+
+
+
+## Most negative articles
+
+
+```{r}
+
+data = df_words %>% filter(theme=="sustainability") %>% 
+  inner_join(get_sentiments("loughran"), by = "word") %>%
+  count(sentiment, title) %>%
+  spread(sentiment, n, fill = 0) %>%
+  filter(positive + negative > 50) %>% 
+  mutate(score = (positive - negative) / (positive + negative)) %>% 
+  drop_na(score) %>% 
+  arrange(score)
+  
+
+
+datatable(data)
+
+```
+
+
+
+```{r}
+
+df_words %>% filter(theme=="sustainability") %>% 
+  count(word) %>%
+  inner_join(get_sentiments("loughran"), by = "word") %>%
+  group_by(sentiment) %>%
+  top_n(5, n) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n), fill=sentiment) %>%
+  ggplot(aes(word, n, fill=fill)) +
+  geom_col() +
+  coord_flip() +
+  facet_wrap(~ sentiment, scales = "free") +
+  theme(legend.pos = "none") + xlab("") + ylab("")
+  
+
+```
+
+
+
+## Chemical colorants
+
+Focussing on our target, chemical colorants, let's take a deeper look about the opinion of the crowd. 
+
+
+## 
+
+```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+
+data = df_words_summary %>% filter(theme == "chemical colorants") %>% top_n(100, n)
+
+ggplot(data, aes(label = word, size = n, color = factor(sample.int(30, nrow(data), replace = TRUE)))) +
   geom_text_wordcloud_area() +
   scale_size_area(max_size = 24) +
   theme_minimal()
@@ -259,7 +343,160 @@ ggplot(data, aes(label = word, size = n, color = factor(sample.int(10, nrow(data
 
 
 
+## Overall sentiment
 
+```{r}
+
+data = df_words %>% filter(theme=="sustainability") %>% inner_join(get_sentiments("afinn")) %>%
+  count(value, sort = TRUE) %>%
+  ungroup()
+
+ggplot(data, aes(x = value, y = n))+
+  geom_col(aes(fill = value)) +
+  xlab("") + ylab("Number of words")
+```
+
+## Positive and negative words
+
+
+```{r}
+
+
+df_words %>% filter(theme=="sustainability") %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup() %>%
+  group_by(sentiment) %>%
+  top_n(10) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  xlab("") + ylab("") +
+  coord_flip()
+
+```
+
+
+
+
+## Spirulina
+
+One of the most famous microalgae, Spirulina, can be used to extract the only blue natural dye, called "Phycocyanin". 
+
+Spirulina has also a lot of beneficial properties, and its cultivation absorbs CO2 from the athmosphere. 
+
+
+## 
+
+```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+
+data = df_words_summary %>% filter(theme == "spirulina") %>% top_n(100, n)
+
+ggplot(data, aes(label = word, size = n, color = factor(sample.int(30, nrow(data), replace = TRUE)))) +
+  geom_text_wordcloud_area() +
+  scale_size_area(max_size = 24) +
+  theme_minimal()
+
+```
+
+
+
+
+## Overall sentiment
+
+
+
+```{r}
+data = df_words %>% filter(theme=="spirulina") %>% inner_join(get_sentiments("nrc")) %>%
+  count(sentiment, sort = TRUE) %>%
+  ungroup()
+
+ggplot(data, aes(x = sentiment, y = n))+
+  geom_col(aes(fill = sentiment)) +
+  theme(legend.pos = "none")
+```
+
+
+
+
+```{r}
+
+df_words %>% filter(theme=="spirulina") %>%
+  inner_join(get_sentiments("nrc")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup() %>%
+  group_by(sentiment) %>%
+  top_n(10) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  xlab("") + ylab("") +
+  coord_flip()
+
+```
+
+
+## Bigrams in most articles
+
+
+```{r}
+
+datatable(
+  df_bigram %>% 
+    filter(theme=="spirulina") %>%
+    select(bigram, title) %>% distinct() %>% 
+    count(bigram, sort = TRUE) %>% 
+    filter(n > 20) %>% select(bigram, "Number of articles"=n)
+)
+
+```
+
+
+
+
+## Steel Production
+
+We plan to cultivate spirulina using the CO2 and heat emitted by steel plants. 
+
+In this way, we can transform a waste into resource! 
+
+
+## 
+
+```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+
+data = df_words_summary %>% filter(theme == "steel production") %>% top_n(100, n)
+
+ggplot(data, aes(label = word, size = n, color = factor(sample.int(30, nrow(data), replace = TRUE)))) +
+  geom_text_wordcloud_area() +
+  scale_size_area(max_size = 24) +
+  theme_minimal()
+
+```
+
+
+## 
+
+
+
+```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+
+data = df_words %>% filter(theme=="steel production") %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(sentiment, title) %>%
+  spread(sentiment, n, fill = 0) %>%
+  filter(negative + positive > 100) %>% 
+  mutate(score = (positive - negative) / (positive + negative)) %>% 
+  drop_na(score) %>% 
+  arrange(desc(score))
+  
+datatable(data)
+
+```
 
 
 
