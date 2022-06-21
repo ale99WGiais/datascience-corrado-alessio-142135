@@ -1,13 +1,13 @@
 ---
-title: "A data-driven analysis for our start-up: INNOvALGAE"
+title: 'A data-driven analysis for our start-up: INNOvALGAE'
 author: "Corrado Alessio"
 output: ioslides_presentation
 fig_width: 8
-fig_height: 5 
-fig_align: "center"
+fig_height: 5
+fig_align: center
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, warning=FALSE, message=FALSE, results='hide'}
 knitr::opts_chunk$set(echo = FALSE)
 
 #remotes::install_github("ianmoran11/mmtable2")
@@ -79,18 +79,17 @@ df_keywords = df %>% group_by(keywords) %>% count() %>% ungroup() %>%
 
 df_connections = df %>% group_by(theme, keywords) %>% count() %>% ungroup()
 
-
 wordCloud = function(theme_name = NA){
 
   data = rbind(
-    df_words_tfidf %>% filter(is.na(theme_name) | theme==theme_name) %>% top_n(70) %>% select(tf_idf, label=word),
-    df_bigram_tfidf %>% filter(is.na(theme_name) | theme==theme_name) %>% top_n(50) %>% select(tf_idf, label=bigram)
+    df_words_tfidf %>% filter(is.na(theme_name) | theme==theme_name) %>% top_n(30) %>% select(tf_idf, label=word),
+    df_bigram_tfidf %>% filter(is.na(theme_name) | theme==theme_name) %>% top_n(25) %>% select(tf_idf, label=bigram)
   ) %>% arrange(desc(tf_idf))
   
   
   ggplot(data, aes(label = label, size = tf_idf, color = factor(sample.int(30, nrow(data), replace = TRUE)))) +
     geom_text_wordcloud_area() +
-    scale_size_area(max_size = 24) +
+    scale_size_area(max_size= 20) +
     theme_minimal()
 
 }
@@ -102,11 +101,11 @@ wordCloud = function(theme_name = NA){
 
 Two of the main industries where they are used are *cosmetics* and *textiles*.
 
-The main danger from the use of these artificial colors are wastewaters: rich of dangerous substances like toxins and heavy metals. 
+The main danger from the use of these artificial colors are *wastewaters*: rich of dangerous substances like toxins and heavy metals. 
 
 These waters end up in sea and rivers, and consequentely in the food we eat. 
 
-When it comes to cosmetic products, safety concerns are rising: they can directly alter the skin, causing toxic effects on the long term. 
+When it comes to *cosmetic products*, safety concerns are rising: they can directly alter the skin, causing toxic effects on the long term. 
 
 
 ## Solution: the use of biologic molecules
@@ -119,54 +118,32 @@ Phycocyanin can be extracted from a microalgae: Spirulina.
 
 Spirulina and Phycocyanin have several beneficial properties on our organism. They are also eco-friendly, free of waste and their production absorbs CO2 from the environment. 
 
-This is the reason why we are launching our start-up: INNOvALGAE. 
+This is the reason why we are launching our start-up: *INNOvALGAE*. 
 
 
 ## Goal of this research
 
-The goal of this research is to find informations on the common sentiment about sustainability, climate change, chemical colorants and Spirulina/Phycocyanin.
+The goal of this research is to find informations on the *common sentiment* about sustainability, climate change, chemical colorants and Spirulina/Phycocyanin.
 
-These informations will help us to evaluate the current situation, find cues about customers' beliefs and guide our business decisions.
-
-
-## Methodology
-
-The steps followed by this study are the following: 
-
--  Collection of a large news dataset about the previous themes;
--  Analysis of the dataset to ensure complentess;
--  Analysis of the single themes to grab informations;
--  Analysis of the relations between themes and keywords to find relations.
+These informations will help us evaluate the current situation, find cues about customers' beliefs and guide our business decisions.
 
 
 ## Data collection 
 
-We have build a set of interesting keywords, grouped by themes. 
+We have build a set of interesting *keywords*, grouped by *themes*. 
 
-Then we have fed the keywords to a custom web crawler which:
+Then we have fed the keywords to a *custom web crawler* which:
 
 - searches the keywords in Google News;
 - downloads a processes the articles;
 - saves them to csv files. 
 
-The crawler was written in Python, while the analysis was performed using R. 
+The crawler was written in Python, while the analysis was performed using R.
 
 
-## Dataset
+## Themes
 
-To start our analysis, we first calculate some metrics about the entire dataset. 
-
-Main goals: 
-
-- verification that it is complete 
-- overview of the contained data
-- overview of the links between data
-
-
-
-### Themes
-
-```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+```{r warning=FALSE, message=FALSE, results='hide'}
 
 data = df_themes %>% select(group=theme, value=n, label)
 
@@ -179,7 +156,6 @@ ggplot(data, aes(x="", y=prop, fill=group)) +
   geom_bar(stat="identity", width=1, color="white", alpha=0.8) +
   coord_polar("y", start=0) +
   theme_void() + 
-  ggtitle("Number of articles for each theme") +
   theme(legend.position="none", plot.title = element_text(hjust = 0.5)) +
   geom_text(aes(x=1.05, y = ypos, label = label), color = "white", size=4) +
   scale_fill_brewer(palette="Set1")
@@ -187,21 +163,20 @@ ggplot(data, aes(x="", y=prop, fill=group)) +
 
 ## Keywords
 
-```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+```{r warning=FALSE, message=FALSE, results='hide'}
   
 
 ggplot(df_connections, aes(fill=keywords, y=n, x=theme)) + 
     geom_bar(position="dodge", stat="identity", color = "gray") +
     geom_text(aes(y=n + 4, label = keywords), color = "black", size=2.2, position = position_dodge(0.9)) +
     coord_flip() +
-    ggtitle("Number of articles for each keyword, grouped by theme") +
     xlab("") + ylab("") + 
     theme(legend.position="none", plot.title = element_text(hjust = 0.5)) 
 ```
 
 ## Searched Keywords
 
-```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+```{r warning=FALSE, message=FALSE, results='hide'}
 
 vertices = rbind(
   df_themes %>% select(name, type, color, label, n), 
@@ -213,10 +188,10 @@ relations = df_connections %>% mutate(from=paste("theme:", theme), to=paste("key
 g = graph_from_data_frame(relations, directed = TRUE, vertices = vertices)
 
 ggraph(g, layout = 'graphopt') + 
-    geom_node_point(aes(size = log(n, 2), color=color, alpha=0.2)) +
-    geom_edge_link(aes(start_cap = label_rect(node1.name), end_cap = label_rect(node2.name)), 
+    geom_node_point(aes(size = 1* log(n, 2), color=color, alpha=0.2)) +
+    geom_edge_link(aes(), 
                    arrow = arrow(type = "closed", length = unit(1, 'mm'))) + 
-    geom_node_text(aes(label = label), size=3) +
+    geom_node_text(aes(label = label), size=2.5) +
   theme_graph() +
   theme(legend.position = "none")
 
@@ -227,7 +202,7 @@ ggraph(g, layout = 'graphopt') +
 
 ## Overall sentiment
 
-```{r}
+```{r warning=FALSE, message=FALSE, results='hide'}
 
 data = df_words %>% inner_join(get_sentiments("bing")) %>%
   count(sentiment, sort = TRUE) %>%
@@ -235,7 +210,7 @@ data = df_words %>% inner_join(get_sentiments("bing")) %>%
 
 ggplot(data, aes(x = sentiment, y = n))+
   geom_col(aes(fill=sentiment)) +
-  xlab("") + ylab("") + ggtitle("Overall sentiment")  + 
+  xlab("") + ylab("") +
   theme(plot.title = element_text(hjust = 0.5)) 
   
 ```
@@ -243,13 +218,13 @@ ggplot(data, aes(x = sentiment, y = n))+
 
 ## Most common words in the titles
 
-```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+```{r warning=FALSE, message=FALSE, results='hide'}
 
-data = df_words_title_summary %>% top_n(100, n) 
+data = df_words_title_summary %>% top_n(50, n) 
 
 ggplot(data, aes(label = word, size = n, color = factor(sample.int(30, nrow(data), replace = TRUE)))) +
   geom_text_wordcloud_area() +
-  scale_size_area(max_size = 24) +
+  scale_size_area(max_size = 20) +
   theme_minimal()
 
 ```
@@ -259,7 +234,7 @@ ggplot(data, aes(label = word, size = n, color = factor(sample.int(30, nrow(data
 
 ## Sustainability
 
-Nowdays, sustainability is a priority.
+Nowdays, *sustainability is a priority*.
 
 Let's have an overview about the general sentiment about sustainability, and identify the major trends. 
 
@@ -267,7 +242,8 @@ Let's have an overview about the general sentiment about sustainability, and ide
 ## 
 
 
-```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+```{r warning=FALSE, message=FALSE, results='hide'}
+
 
 wordCloud("sustainability")
 
@@ -278,7 +254,7 @@ wordCloud("sustainability")
 ## Most common words about sustainability
 
 
-```{r}
+```{r warning=FALSE, message=FALSE, results='hide'}
 
 data = df_words %>% filter(theme=="sustainability") %>% inner_join(get_sentiments("loughran")) %>%
   count(sentiment, sort = TRUE) %>%
@@ -286,7 +262,8 @@ data = df_words %>% filter(theme=="sustainability") %>% inner_join(get_sentiment
 
 ggplot(data, aes(x = sentiment, y = n))+
   geom_col(aes(fill = sentiment)) +
-  theme(legend.pos = "none")
+  theme(legend.pos = "none") +
+  xlab("") + ylab("Word count")
 
 ```
 
@@ -295,7 +272,7 @@ ggplot(data, aes(x = sentiment, y = n))+
 ## Most negative articles
 
 
-```{r}
+```{r warning=FALSE, message=FALSE}
 
 data = df_words %>% filter(theme=="sustainability") %>% 
   inner_join(get_sentiments("loughran"), by = "word") %>%
@@ -304,17 +281,19 @@ data = df_words %>% filter(theme=="sustainability") %>%
   filter(positive + negative > 50) %>% 
   mutate(score = (positive - negative) / (positive + negative)) %>% 
   drop_na(score) %>% 
-  arrange(score)
+  arrange(score) %>% select(title, positive, negative, score)
   
 
 
-datatable(data)
+datatable(data) %>% formatStyle(columns = c(1,2,3,4,5,6,7), fontSize = '40%')
 
 ```
 
 
+## Words per sentiment
 
-```{r}
+
+```{r warning=FALSE, message=FALSE, results='hide'}
 
 df_words %>% filter(theme=="sustainability") %>% 
   count(word) %>%
@@ -336,29 +315,26 @@ df_words %>% filter(theme=="sustainability") %>%
 
 ## Chemical colorants
 
-Focussing on our target, chemical colorants, let's take a deeper look about the opinion of the crowd. 
+Focussing on our target, *chemical colorants*, let's take a deeper look about the opinion of the crowd. 
 
 
 ## 
 
-```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+```{r warning=FALSE, message=FALSE, results='hide'}
 
-data = df_words_summary %>% filter(theme == "chemical colorants") %>% top_n(200, n)
+data = df_words_summary %>% filter(theme == "chemical colorants") %>% top_n(50, n)
 
 ggplot(data, aes(label = word, size = n, color = factor(sample.int(30, nrow(data), replace = TRUE)))) +
   geom_text_wordcloud_area() +
-  scale_size_area(max_size = 24) +
+  scale_size_area(max_size= 20) +
   theme_minimal()
 
 ```
 
 
-
-
-
 ## Overall sentiment
 
-```{r}
+```{r warning=FALSE, message=FALSE, results='hide'}
 
 data = df_words %>% filter(theme=="sustainability") %>% inner_join(get_sentiments("afinn")) %>%
   count(value, sort = TRUE) %>%
@@ -372,7 +348,7 @@ ggplot(data, aes(x = value, y = n))+
 ## Positive and negative words
 
 
-```{r}
+```{r warning=FALSE, message=FALSE, results='hide'}
 
 
 df_words %>% filter(theme=="sustainability") %>%
@@ -396,23 +372,22 @@ df_words %>% filter(theme=="sustainability") %>%
 
 ## Spirulina
 
-One of the most famous microalgae, Spirulina, can be used to extract the only blue natural dye, called "Phycocyanin". 
+One of the most famous microalgae, *Spirulina*, can be used to extract the only blue natural dye, called "Phycocyanin". 
 
 Spirulina has also a lot of beneficial properties, and its cultivation absorbs CO2 from the athmosphere. 
 
 
 ## 
 
-```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+```{r warning=FALSE, message=FALSE, results='hide'}
 
-data = df_words_summary %>% filter(theme == "spirulina") %>% top_n(100, n)
+data = df_words_summary %>% filter(theme == "spirulina") %>% top_n(50, n)
 
 ggplot(data, aes(label = word, size = n, color = factor(sample.int(30, nrow(data), replace = TRUE)))) +
   geom_text_wordcloud_area() +
-  scale_size_area(max_size = 24) +
+  scale_size_area(max_size= 20) +
   theme_minimal()
 
-wordCloud("spirulina")
 
 ```
 
@@ -423,21 +398,22 @@ wordCloud("spirulina")
 
 
 
-```{r}
+```{r warning=FALSE, message=FALSE, results='hide'}
 data = df_words %>% filter(theme=="spirulina") %>% inner_join(get_sentiments("nrc")) %>%
   count(sentiment, sort = TRUE) %>%
   ungroup()
 
 ggplot(data, aes(x = sentiment, y = n))+
   geom_col(aes(fill = sentiment)) +
-  theme(legend.pos = "none")
+  theme(legend.pos = "none") +
+  xlab("") + ylab("Number of words")
 ```
 
 
 ## Most common words per sentiment
 
 
-```{r}
+```{r warning=FALSE, message=FALSE, results='hide'}
 
 df_words %>% filter(theme=="spirulina") %>%
   inner_join(get_sentiments("nrc")) %>%
@@ -459,7 +435,7 @@ df_words %>% filter(theme=="spirulina") %>%
 ## Bigrams in most articles
 
 
-```{r}
+```{r warning=FALSE, message=FALSE}
 
 datatable(
   df_bigram %>% 
@@ -476,14 +452,14 @@ datatable(
 
 ## Steel Production
 
-We plan to cultivate spirulina using the CO2 and heat emitted by steel plants. 
+We plan to cultivate spirulina *using the CO2 and heat emitted by steel plants*. 
 
 In this way, we can transform a waste into resource! 
 
 
 ## 
 
-```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+```{r warning=FALSE, message=FALSE, results='hide'}
 
 wordCloud("steel production")
 
@@ -494,7 +470,7 @@ wordCloud("steel production")
 
 
 
-```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+```{r warning=FALSE, message=FALSE}
 
 data = df_words %>% filter(theme=="steel production") %>%
   inner_join(get_sentiments("bing")) %>%
@@ -505,7 +481,7 @@ data = df_words %>% filter(theme=="steel production") %>%
   drop_na(score) %>% 
   arrange(desc(score))
   
-datatable(data)
+datatable(data) %>% formatStyle(columns = c(1,2,3,4,5,6,7), fontSize = '40%')
 
 ```
 
@@ -514,20 +490,20 @@ datatable(data)
 
 ## Phycocyanin
 
-Finally, here out product: Phycocyanin.
+Finally, here out product: *Phycocyanin*.
 
 We believe that it will revolution the colorants industry, challenging climate change and preserving people's health.
 
 
 ##
 
-```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+```{r warning=FALSE, message=FALSE, results='hide'}
 
-data = df_words_summary %>% filter(theme == "phycocyanin") %>% top_n(200, n)
+data = df_words_summary %>% filter(theme == "phycocyanin") %>% top_n(80, n)
 
 ggplot(data, aes(label = word, size = n, color = factor(sample.int(30, nrow(data), replace = TRUE)))) +
   geom_text_wordcloud_area() +
-  scale_size_area(max_size = 24) +
+  scale_size_area(max_size= 20) +
   theme_minimal()
 
 
@@ -538,7 +514,7 @@ ggplot(data, aes(label = word, size = n, color = factor(sample.int(30, nrow(data
 ## Common sentiment about phycocyanin vs all
 
 
-```{r}
+```{r warning=FALSE, message=FALSE, results='hide'}
 data_phy = df_words %>% filter(theme=="phycocyanin") %>% inner_join(get_sentiments("loughran")) 
 
 data_phy = data_phy %>%
@@ -553,8 +529,9 @@ data_all = data_all %>%
 
 data = rbind(data_phy, data_all)
 
-ggplot(data, aes(x = sentiment, y = n))+
-  geom_col(aes(fill = label), position="dodge")
+ggplot(data, aes(x = sentiment, y = n * 100))+
+  geom_col(aes(fill = label), position="dodge") +
+  xlab("") + ylab("% of words")
 ```
 
 
@@ -564,7 +541,7 @@ ggplot(data, aes(x = sentiment, y = n))+
 
 
 
-```{r fig.height = 5, fig.width = 8, fig.align = "center"}
+```{r warning=FALSE, message=FALSE}
 
 data = df_words %>% filter(theme=="phycocyanin") %>%
   inner_join(get_sentiments("bing")) %>%
@@ -575,7 +552,7 @@ data = df_words %>% filter(theme=="phycocyanin") %>%
   drop_na(score) %>% 
   arrange(desc(score))
   
-datatable(data)
+datatable(data) %>% formatStyle(columns = c(1,2,3,4,5,6,7), fontSize = '40%')
 
 ```
 
@@ -583,7 +560,7 @@ datatable(data)
 ## Top bigrams
 
 
-```{r}
+```{r warning=FALSE, message=FALSE, results='hide'}
 df_bigram %>% 
   filter(theme=="phycocyanin") %>%
   select(bigram, title) %>% distinct() %>% 
@@ -593,80 +570,10 @@ df_bigram %>%
   ggplot(aes(x = bigram, y = n)) +
   geom_col(aes(fill=bigram)) +
   theme(legend.pos = "none")+
-  coord_flip()
+  coord_flip() +
+  xlab("") + ylab("")
 
 ```
-
-## Detail about bigrams
-
-
-```{r}
-
-datatable(
-  df_bigram %>% 
-    filter(theme=="phycocyanin") %>%
-    select(bigram, title) %>% distinct() %>% 
-    count(bigram, sort = TRUE) %>% 
-    filter(n > 3) %>% select(bigram, "Number of articles"=n)
-)
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r}
-
-data = df_words %>% inner_join(get_sentiments("bing")) %>%
-  count(theme, sentiment, sort = TRUE) %>%
-  ungroup()
-
-ggplot(data, aes(x = theme, y = n))+
-  geom_col(aes(fill = sentiment))
-
-data = df_words %>% inner_join(get_sentiments("afinn")) %>%
-  count(theme, value) %>%
-  ungroup()
-
-ggplot(data, aes(x = theme, y = n))+
-  geom_col(aes(fill = value))
-
-data = df_words %>% inner_join(get_sentiments("nrc")) %>%
-  count(theme, sentiment, sort = TRUE) %>%
-  ungroup()
-
-ggplot(data, aes(x = theme, y = n))+
-  geom_col(aes(fill = sentiment))
-
-data = df_words %>% inner_join(get_sentiments("loughran")) %>%
-  count(theme, sentiment, sort = TRUE) %>%
-  ungroup()
-
-ggplot(data, aes(x = theme, y = n))+
-  geom_col(aes(fill = sentiment))
-
-```
-
 
 
 ## Global positivity score
@@ -690,6 +597,12 @@ data %>%
 
 ```
 
+
+## Thanks for your attention
+
+<span style="color:darkcyan">We</span> <span style="color:cyan4">are</span> <span style="color:blue">*InnoValgae*</span>.
+
+<span style="color:chocolate">Come</span> <span style="color:darkolivegreen1">and</span> <span style="color:darkturquoise">join</span> <span style="color:chartreuse4">our</span> <span style="color:dodgerblue1">*promising*</span>  <span style="color:blue">blue</span> <span style="color:darkcyan">future*</span>. 
 
 
 
