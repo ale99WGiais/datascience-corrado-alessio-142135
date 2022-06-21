@@ -600,13 +600,9 @@ data %>%
 
 ## Thanks for your attention
 
-<span style="color:darkcyan">We</span> <span style="color:cyan4">are</span> <span style="color:blue">*InnoValgae*</span>.
+<span style="color:red">We</span> <span style="color:forestgreen">are</span> <span style="color:blue;font-weight:bold">*InnoValgae*</span>.
 
-<span style="color:chocolate">Come</span> <span style="color:darkolivegreen1">and</span> <span style="color:darkturquoise">join</span> <span style="color:chartreuse4">our</span> <span style="color:dodgerblue1">*promising*</span>  <span style="color:blue">blue</span> <span style="color:darkcyan">future*</span>. 
-
-
-
-
+<span style="color:chocolate">Come</span> <span style="color:darkolivegreen1">and</span> <span style="color:darkturquoise">join</span> <span style="color:orange1">our</span> <span style="color:magenta">*promising*</span>  <span style="color:blue;font-weight:bold">*blue*</span> <span style="color:seagreen">*future*</span>. 
 
 
 
