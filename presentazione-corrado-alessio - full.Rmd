@@ -200,6 +200,21 @@ ggraph(g, layout = 'graphopt') +
 
 
 
+## Overall sentiment
+
+```{r warning=FALSE, message=FALSE, results='hide'}
+
+data = df_words %>% inner_join(get_sentiments("bing")) %>%
+  count(sentiment, sort = TRUE) %>%
+  ungroup()
+
+ggplot(data, aes(x = sentiment, y = n))+
+  geom_col(aes(fill=sentiment)) +
+  xlab("") + ylab("") +
+  theme(plot.title = element_text(hjust = 0.5)) 
+  
+```
+
 
 ## Most common words in the titles
 
@@ -214,23 +229,6 @@ ggplot(data, aes(label = word, size = n, color = factor(sample.int(30, nrow(data
 
 ```
 
-
-
-
-## Overall sentiment (bing)
-
-```{r warning=FALSE, message=FALSE, results='hide'}
-
-data = df_words %>% inner_join(get_sentiments("bing")) %>%
-  count(sentiment, sort = TRUE) %>%
-  ungroup()
-
-ggplot(data, aes(x = sentiment, y = n))+
-  geom_col(aes(fill=sentiment)) +
-  xlab("") + ylab("") +
-  theme(plot.title = element_text(hjust = 0.5)) 
-  
-```
 
 
 
@@ -253,7 +251,7 @@ wordCloud("sustainability")
 
 
 
-## Most common words about sustainability (loughran)
+## Most common words about sustainability
 
 
 ```{r warning=FALSE, message=FALSE, results='hide'}
@@ -271,7 +269,7 @@ ggplot(data, aes(x = sentiment, y = n))+
 
 
 
-## Most negative articles (loughran)
+## Most negative articles
 
 
 ```{r warning=FALSE, message=FALSE}
@@ -287,23 +285,12 @@ data = df_words %>% filter(theme=="sustainability") %>%
   
 
 
-datatable(data, options = list(
-  pageLength = 8,
-  initComplete = JS(
-    "function(settings, json) {",
-    "$(this.api().table().header()).css({'background-color': '#222', 'color': '#fff'});",
-    "}"),
-  headerCallback = JS(
-    "function(thead) {",
-    "  $(thead).css('font-size', '60%');",
-    "}"
-  )
-)) %>% formatStyle(columns = c(1,2,3,4,5,6,7), fontSize = '40%')
+datatable(data) %>% formatStyle(columns = c(1,2,3,4,5,6,7), fontSize = '40%')
 
 ```
 
 
-## Words per sentiment (loughran)
+## Words per sentiment
 
 
 ```{r warning=FALSE, message=FALSE, results='hide'}
@@ -345,9 +332,24 @@ ggplot(data, aes(label = word, size = n, color = factor(sample.int(30, nrow(data
 ```
 
 
-## Positive and negative words (bing)
+## Overall sentiment
 
 ```{r warning=FALSE, message=FALSE, results='hide'}
+
+data = df_words %>% filter(theme=="sustainability") %>% inner_join(get_sentiments("afinn")) %>%
+  count(value, sort = TRUE) %>%
+  ungroup()
+
+ggplot(data, aes(x = value, y = n))+
+  geom_col(aes(fill = value)) +
+  xlab("") + ylab("Number of words")
+```
+
+## Positive and negative words
+
+
+```{r warning=FALSE, message=FALSE, results='hide'}
+
 
 df_words %>% filter(theme=="sustainability") %>%
   inner_join(get_sentiments("bing")) %>%
@@ -364,6 +366,7 @@ df_words %>% filter(theme=="sustainability") %>%
   coord_flip()
 
 ```
+
 
 
 
@@ -391,7 +394,7 @@ ggplot(data, aes(label = word, size = n, color = factor(sample.int(30, nrow(data
 
 
 
-## Overall sentiment (nrc)
+## Overall sentiment
 
 
 
@@ -407,7 +410,7 @@ ggplot(data, aes(x = sentiment, y = n))+
 ```
 
 
-## Most common words per sentiment (nrc)
+## Most common words per sentiment
 
 
 ```{r warning=FALSE, message=FALSE, results='hide'}
@@ -434,24 +437,13 @@ df_words %>% filter(theme=="spirulina") %>%
 
 ```{r warning=FALSE, message=FALSE}
 
-data = df_bigram %>% 
+datatable(
+  df_bigram %>% 
     filter(theme=="spirulina") %>%
     select(bigram, title) %>% distinct() %>% 
     count(bigram, sort = TRUE) %>% 
     filter(n > 20) %>% select(bigram, "Number of articles"=n)
-
-datatable(data, options = list(
-  pageLength = 8,
-  initComplete = JS(
-    "function(settings, json) {",
-    "$(this.api().table().header()).css({'background-color': '#222', 'color': '#fff'});",
-    "}"),
-  headerCallback = JS(
-    "function(thead) {",
-    "  $(thead).css('font-size', '60%');",
-    "}"
-  )
-)) %>% formatStyle(columns = c(1,2,3,4,5,6,7), fontSize = '40%')
+)
 
 ```
 
@@ -474,7 +466,7 @@ wordCloud("steel production")
 ```
 
 
-## Titles of articles about steel prod. (bing)
+## Titles of articles about steel production
 
 
 
@@ -489,20 +481,8 @@ data = df_words %>% filter(theme=="steel production") %>%
   drop_na(score) %>% 
   arrange(desc(score))
   
+datatable(data) %>% formatStyle(columns = c(1,2,3,4,5,6,7), fontSize = '40%')
 
-
-datatable(data, options = list(
-  pageLength = 8,
-  initComplete = JS(
-    "function(settings, json) {",
-    "$(this.api().table().header()).css({'background-color': '#222', 'color': '#fff'});",
-    "}"),
-  headerCallback = JS(
-    "function(thead) {",
-    "  $(thead).css('font-size', '60%');",
-    "}"
-  )
-)) %>% formatStyle(columns = c(1,2,3,4,5,6,7), fontSize = '40%')
 ```
 
 
@@ -531,7 +511,7 @@ ggplot(data, aes(label = word, size = n, color = factor(sample.int(30, nrow(data
 
 
 
-## Common sentiment about phycocyanin vs all (loughran)
+## Common sentiment about phycocyanin vs all
 
 
 ```{r warning=FALSE, message=FALSE, results='hide'}
@@ -557,7 +537,7 @@ ggplot(data, aes(x = sentiment, y = n * 100))+
 
 
 
-## Titles of articles about phycocyanin (bing)
+## Titles of articles about phycocyanin
 
 
 
@@ -572,19 +552,7 @@ data = df_words %>% filter(theme=="phycocyanin") %>%
   drop_na(score) %>% 
   arrange(desc(score))
   
-
-datatable(data, options = list(
-  pageLength = 8,
-  initComplete = JS(
-    "function(settings, json) {",
-    "$(this.api().table().header()).css({'background-color': '#222', 'color': '#fff'});",
-    "}"),
-  headerCallback = JS(
-    "function(thead) {",
-    "  $(thead).css('font-size', '60%');",
-    "}"
-  )
-)) %>% formatStyle(columns = c(1,2,3,4,5,6,7), fontSize = '40%')
+datatable(data) %>% formatStyle(columns = c(1,2,3,4,5,6,7), fontSize = '40%')
 
 ```
 
@@ -608,7 +576,7 @@ df_bigram %>%
 ```
 
 
-## Global positivity score (loughran)
+## Global positivity score
 
 
 ```{r}
